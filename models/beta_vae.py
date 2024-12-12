@@ -177,3 +177,12 @@ class BetaVAE(BaseVAE):
         """
 
         return self.forward(x)[0]
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+
+        # Define scheduler
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
+
+        # PyTorch Lightning expects a list of optimizers and a list of schedulers in this format
+        return [optimizer], [{'scheduler': scheduler, 'interval': 'epoch'}]
