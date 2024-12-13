@@ -41,6 +41,8 @@ class TestBetaVAE(unittest.TestCase):
         # Get the version number (e.g., version 4)
         version = tb_logger.version
 
+        log_dir_base = os.path.dirname(tb_logger.log_dir)
+
         # Remove the last part after the final "/"
         log_dir_base = log_dir_base.rsplit('/', 1)[0]
 
