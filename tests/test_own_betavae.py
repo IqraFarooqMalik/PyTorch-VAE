@@ -135,7 +135,7 @@ class TestBetaVAE(unittest.TestCase):
             checkpoint = torch.load(checkpoint_path)
             print(checkpoint.keys())  # Print the available keys in the checkpoint
 
-            self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.model.load_state_dict(checkpoint['state_dict'])
             print("Checkpoint loaded successfully!")
         except Exception as e:
             self.fail(f"Error occurred while loading the checkpoint: {e}")
