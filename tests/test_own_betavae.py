@@ -38,9 +38,17 @@ class TestBetaVAE(unittest.TestCase):
             save_dir=config['logging_params']['save_dir'],
             name=config['model_params']['name']
         )
-        print("tb_logger", tb_logger)
-        self.checkpoint_dir = os.path.join(tb_logger.log_dir, "checkpoints")
-        print(f"Checkpoint directory: {self.checkpoint_dir}")
+        # Get the version number (e.g., version 4)
+        version = tb_logger.version
+
+        # Adjust the version number in the path, if necessary
+        # If the version is 4, but directories are version_3, subtract 1
+        corrected_version = version - 1
+
+        # Construct the checkpoint directory path using the corrected version
+        checkpoint_dir = os.path.join(tb_logger.log_dir, f"version_{corrected_version}", "checkpoints")
+
+        print(f"Corrected Checkpoint directory: {checkpoint_dir}")
 
     def test_summary(self):
         """Test if the model's architecture is defined correctly."""
