@@ -2,7 +2,7 @@ import os
 import argparse
 import torch
 import unittest
-from models import BetaVAE
+from models.beta_vae import BetaVAE
 from dataset import VAEDataset
 from experiment import VAEXperiment
 from pytorch_lightning import Trainer
