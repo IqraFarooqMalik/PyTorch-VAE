@@ -124,7 +124,7 @@ class TestBetaVAE(unittest.TestCase):
 
     def test_checkpoint_loading(self):
         """Test loading a model checkpoint."""
-        checkpoint_path = self.checkpoint_dir  # Example path
+        checkpoint_path = os.path.join(self.checkpoint_dir, "last.ckpt")
         
         if not os.path.exists(checkpoint_path):
             print(f"Checkpoint file does not exist at: {checkpoint_path}")
