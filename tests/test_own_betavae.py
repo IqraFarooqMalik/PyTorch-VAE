@@ -133,9 +133,15 @@ class TestBetaVAE(unittest.TestCase):
         # If checkpoint exists, attempt to load it
         try:
             checkpoint = torch.load(checkpoint_path)
-            print(checkpoint.keys())  # Print the available keys in the checkpoint
-
             self.model.load_state_dict(checkpoint['state_dict'])
+            # Strip the 'model.' prefix if it exists
+            checkpoint = torch.load(checkpoint_path)
+            state_dict = checkpoint['state_dict']
+            # Update the state dict to match the model's parameter names
+            new_state_dict = {}
+            for key, value in state_dict.items():
+                new_state_dict[key.replace('model.', '')] = value
+            self.model.load_state_dict(new_state_dict)
             print("Checkpoint loaded successfully!")
         except Exception as e:
             self.fail(f"Error occurred while loading the checkpoint: {e}")
