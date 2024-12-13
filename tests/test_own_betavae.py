@@ -44,7 +44,7 @@ class TestBetaVAE(unittest.TestCase):
         log_dir_base = os.path.dirname(tb_logger.log_dir)
 
         # Remove the last part after the final "/"
-        log_dir_base = log_dir_base.rsplit('/', 1)[0]
+        log_dir_base = os.path.dirname(log_dir_base.rstrip('/'))
 
         # Correct the version (assuming you want to subtract 1 from the current version).
         corrected_version = version - 1
