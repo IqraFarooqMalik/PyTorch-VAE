@@ -133,6 +133,8 @@ class TestBetaVAE(unittest.TestCase):
         # If checkpoint exists, attempt to load it
         try:
             checkpoint = torch.load(checkpoint_path)
+            print(checkpoint.keys())  # Print the available keys in the checkpoint
+
             self.model.load_state_dict(checkpoint['model_state_dict'])
             print("Checkpoint loaded successfully!")
         except Exception as e:
