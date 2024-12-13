@@ -17,7 +17,7 @@ parser.add_argument('--config', '-c',
                     metavar='FILE', 
                     help='Path to the config file', 
                     required=True)
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()  # Handle unrecognized arguments
 
 # Load configuration from the provided file
 with open(args.filename, 'r') as file:
@@ -118,4 +118,4 @@ class TestBetaVAE(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(argv=[sys.argv[0]] + unknown)  # Pass unrecognized arguments to unittest
