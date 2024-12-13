@@ -44,14 +44,6 @@ class TestBetaVAE(unittest.TestCase):
         """Test if the model's architecture is defined correctly."""
         print(summary(self.model, (3, 64, 64), device='cpu'))
 
-    def test_forward(self):
-        """Test the forward pass for output shapes."""
-        x = torch.randn(16, 3, 64, 64).cuda()
-        reconstructed, latent = self.model(x)
-        print("Reconstruction Output Shape:", reconstructed.size())
-        print("Latent Output Shape:", latent.size())
-        self.assertEqual(reconstructed.shape, x.shape)
-
     def test_loss(self):
         """Test the loss function output."""
         x = torch.randn(16, 3, 64, 64).cuda()
@@ -61,15 +53,23 @@ class TestBetaVAE(unittest.TestCase):
         self.assertIn('reconstruction_loss', loss)
         self.assertIn('kl_loss', loss)
 
+    def test_forward(self):
+        """Test the forward pass for output shapes."""
+        x = torch.randn(16, 3, 64, 64).cuda()
+        reconstructed, latent, extra_output = self.model(x)  # Adjust unpacking
+        print("Reconstruction Output Shape:", reconstructed.size())
+        print("Latent Output Shape:", latent.size())
+        self.assertEqual(reconstructed.shape, x.shape)
+
     def test_dataset_forward(self):
         """Test model forward pass using the actual dataset."""
-        data = VAEDataset(data_dir="path_to_data", transform=None, batch_size=16)
+        data = VAEDataset(data_path="path_to_data", transform=None, batch_size=16)  # Provide dataset path
         data.setup(stage='test')
         test_loader = data.test_dataloader()
-        
+
         for batch in test_loader:
-            x = batch['data'].cuda()  # Adjust key if needed
-            reconstructed, latent = self.model(x)
+            x = batch['data'].cuda()  # Move to GPU
+            reconstructed, latent, extra_output = self.model(x)  # Adjust unpacking
             print("Batch Output Shape:", reconstructed.shape)
             self.assertEqual(reconstructed.shape, x.shape)
             break
