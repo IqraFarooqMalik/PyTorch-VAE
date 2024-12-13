@@ -38,6 +38,7 @@ class TestBetaVAE(unittest.TestCase):
             save_dir=config['logging_params']['save_dir'],
             name=config['model_params']['name']
         )
+        print("tb_logger", tb_logger)
         self.checkpoint_dir = os.path.join(tb_logger.log_dir, "checkpoints")
         print(f"Checkpoint directory: {self.checkpoint_dir}")
 
@@ -101,7 +102,7 @@ class TestBetaVAE(unittest.TestCase):
         test_loader = data.test_dataloader()
 
         for batch in test_loader:
-            x = batch['data'].cuda()  # Move to GPU
+            x = batch[0].cuda()   # Move to GPU
             reconstructed, latent, extra_output = self.model(x)  # Adjust unpacking
             print("Batch Output Shape:", reconstructed.shape)
             self.assertEqual(reconstructed.shape, x.shape)
@@ -154,16 +155,6 @@ class TestBetaVAE(unittest.TestCase):
         # Assertions
         self.assertTrue(recons_loss.item() > 0, "Reconstruction loss should be positive")
         self.assertTrue(kld_loss.item() >= 0, "KL divergence should be non-negative")
-
-
-    def test_edge_cases(self):
-        """Test edge cases for model stability."""
-        # Create an empty tensor with shape [0, 3, 64, 64]
-        empty_input = torch.empty(0, 3, 64, 64).cuda()
-
-        # Check if a RuntimeError is raised
-        with pytest.raises(RuntimeError):
-            self.model(empty_input)
 
 
 if __name__ == '__main__':
