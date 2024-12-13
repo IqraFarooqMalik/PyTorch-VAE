@@ -41,12 +41,14 @@ class TestBetaVAE(unittest.TestCase):
         # Get the version number (e.g., version 4)
         version = tb_logger.version
 
-        # Adjust the version number in the path, if necessary
-        # If the version is 4, but directories are version_3, subtract 1
+        # Remove the last part after the final "/"
+        log_dir_base = log_dir_base.rsplit('/', 1)[0]
+
+        # Correct the version (assuming you want to subtract 1 from the current version).
         corrected_version = version - 1
 
-        # Construct the checkpoint directory path using the corrected version
-        checkpoint_dir = os.path.join(tb_logger.log_dir, f"version_{corrected_version}", "checkpoints")
+        # Construct the new checkpoint directory path with the corrected version
+        checkpoint_dir = os.path.join(log_dir_base, f"version_{corrected_version}", "checkpoints")
 
         print(f"Corrected Checkpoint directory: {checkpoint_dir}")
 
