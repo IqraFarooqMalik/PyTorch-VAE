@@ -10,6 +10,7 @@ from pytorch_lightning import Trainer
 from torchsummary import summary
 from pytorch_lightning.loggers import TensorBoardLogger
 import yaml
+import pytest
 
 # Argument parser for the config file
 parser = argparse.ArgumentParser(description='Test script for BetaVAE models')
@@ -95,7 +96,7 @@ class TestBetaVAE(unittest.TestCase):
     def test_dataset_forward(self):
         """Test model forward pass using the actual dataset."""
 
-        data = VAEDataset(data_path=config["data_params"], transform=None, batch_size=16)  # Provide dataset path
+        data = VAEDataset(data_path=config["data_params"]["data_path"], transform=None, batch_size=16)  # Provide dataset path
         data.setup(stage='test')
         test_loader = data.test_dataloader()
 
@@ -108,7 +109,7 @@ class TestBetaVAE(unittest.TestCase):
 
     def test_checkpoint_loading(self):
         """Test loading a model checkpoint."""
-        checkpoint_path = "./checkpoints/beta_vae_checkpoint.pth"  # Example path
+        checkpoint_path = self.checkpoint_dir  # Example path
         
         if not os.path.exists(checkpoint_path):
             print(f"Checkpoint file does not exist at: {checkpoint_path}")
@@ -143,7 +144,7 @@ class TestBetaVAE(unittest.TestCase):
         log_var = outputs[3]  # Latent log variance
         
         # Compute metrics
-        recons_loss = F.mse_loss(reconstructed, x)
+        recons_loss = torch.nn.functional.mse_loss(reconstructed, x)
         kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
         
         # Print metrics
