@@ -27,6 +27,8 @@ with open(args.filename, 'r') as file:
 
 class TestBetaVAE(unittest.TestCase):
 
+    checkpoint_dir = ""
+
     def setUp(self) -> None:
         self.input_channels = 3
         self.latent_dim = 10
@@ -50,6 +52,7 @@ class TestBetaVAE(unittest.TestCase):
 
         # Construct the new checkpoint directory path with the corrected version
         checkpoint_dir = os.path.join(log_dir_base, f"version_{corrected_version}", "checkpoints")
+        self.checkpoint_dir = checkpoint_dir
 
         print(f"Corrected Checkpoint directory: {checkpoint_dir}")
 
