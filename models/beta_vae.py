@@ -57,7 +57,8 @@ class BetaVAE(BaseVAE):
         # Build Decoder
         modules = []
 
-        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
+        # Adjust the input size for the latent vector
+        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 16)  # Adjusted multiplier for larger latent size
 
         hidden_dims.reverse()
 
@@ -65,31 +66,30 @@ class BetaVAE(BaseVAE):
             modules.append(
                 nn.Sequential(
                     nn.ConvTranspose2d(hidden_dims[i],
-                                       hidden_dims[i + 1],
-                                       kernel_size=3,
-                                       stride=2,
-                                       padding=1,
-                                       output_padding=1),
+                                    hidden_dims[i + 1],
+                                    kernel_size=3,
+                                    stride=2,
+                                    padding=1,
+                                    output_padding=1),
                     nn.BatchNorm2d(hidden_dims[i + 1]),
                     nn.LeakyReLU())
             )
 
         self.decoder = nn.Sequential(*modules)
 
-        # Modify final layer to dynamically adjust to the input size (instead of fixed 3 channels)
+        # Final upsampling layer to match the desired image size
         self.final_layer = nn.Sequential(
-                            nn.ConvTranspose2d(hidden_dims[-1],
-                                               hidden_dims[-1],
-                                               kernel_size=3,
-                                               stride=2,
-                                               padding=1,
-                                               output_padding=1),
-                            nn.BatchNorm2d(hidden_dims[-1]),
-                            nn.LeakyReLU(),
-                            # Final output layer now dynamically produces the correct number of channels
-                            nn.Conv2d(hidden_dims[-1], out_channels=in_channels,  # Dynamically use in_channels
-                                      kernel_size=3, padding=1),
-                            nn.Tanh())
+            nn.ConvTranspose2d(hidden_dims[-1],
+                            hidden_dims[-1],
+                            kernel_size=3,
+                            stride=2,
+                            padding=1,
+                            output_padding=1),
+            nn.BatchNorm2d(hidden_dims[-1]),
+            nn.LeakyReLU(),
+            nn.Conv2d(hidden_dims[-1], out_channels=3,  # Output 3 channels for RGB
+                    kernel_size=3, padding=1),
+            nn.Tanh())  # Ensure the output is in the range [-1, 1] if you're using Tanh
 
     def encode(self, input: Tensor) -> List[Tensor]:
         """
