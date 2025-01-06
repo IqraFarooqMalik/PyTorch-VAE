@@ -76,6 +76,7 @@ class BetaVAE(BaseVAE):
 
         self.decoder = nn.Sequential(*modules)
 
+        # Modify final layer to dynamically adjust to the input size (instead of fixed 3 channels)
         self.final_layer = nn.Sequential(
                             nn.ConvTranspose2d(hidden_dims[-1],
                                                hidden_dims[-1],
@@ -85,7 +86,8 @@ class BetaVAE(BaseVAE):
                                                output_padding=1),
                             nn.BatchNorm2d(hidden_dims[-1]),
                             nn.LeakyReLU(),
-                            nn.Conv2d(hidden_dims[-1], out_channels=3,  # Output 3 channels for RGB
+                            # Final output layer now dynamically produces the correct number of channels
+                            nn.Conv2d(hidden_dims[-1], out_channels=in_channels,  # Dynamically use in_channels
                                       kernel_size=3, padding=1),
                             nn.Tanh())
 
