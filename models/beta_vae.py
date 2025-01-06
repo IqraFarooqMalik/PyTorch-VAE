@@ -44,9 +44,17 @@ class BetaVAE(BaseVAE):
             in_channels = h_dim
 
         self.encoder = nn.Sequential(*modules)
-        self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dim)
-        self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dim)
+        # self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dim)
+        # self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dim)
 
+        # Pass a dummy input to calculate the flattened size
+        dummy_input = torch.zeros(1, in_channels, 256, 256)  # Assuming input image size is 256x256
+        dummy_output = self.encoder(dummy_input)
+        flattened_size = dummy_output.numel()
+
+        # Adjust fc_mu and fc_var layers to the correct size
+        self.fc_mu = nn.Linear(flattened_size, latent_dim)
+        self.fc_var = nn.Linear(flattened_size, latent_dim)
 
         # Build Decoder
         modules = []
