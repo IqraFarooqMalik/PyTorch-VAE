@@ -1,6 +1,6 @@
 
-data/
-
+data
+.vscode
 VanillaVAE/version_0/
 
 __pycache__/
