@@ -8,9 +8,9 @@ model_params:
   Capacity_max_iter: 10000
 
 data_params:
-  data_path: "Data/"
-  train_batch_size: 64
-  val_batch_size:  64
+  data_path: "data/"
+  train_batch_size: 8
+  val_batch_size:  8
   patch_size: 64
   num_workers: 4
   
