@@ -54,7 +54,7 @@ class BetaVAE(BaseVAE):
         modules = []
 
         self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 7 * 7)  
-
+        
         hidden_dims.reverse()
 
         for i in range(len(hidden_dims) - 1):
@@ -122,10 +122,17 @@ class BetaVAE(BaseVAE):
         return eps * std + mu
 
     def forward(self, input: Tensor, **kwargs) -> Tensor:
-
+        # print(f"Input size: {input.size()}")
+        
         mu, log_var = self.encode(input)
+                
         z = self.reparameterize(mu, log_var)
+        
+        # print(f"z size (latent space): {z.size()}")
+        
         recons = self.decode(z)
+        
+        # print(f"Reconstructed size: {recons.size()}")
         
         return [recons, input, mu, log_var]
 
