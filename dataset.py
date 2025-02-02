@@ -89,14 +89,14 @@ class VAEDataset(LightningDataModule):
         # Defining transforms
         train_transforms = transforms.Compose([
             transforms.RandomHorizontalFlip(),
-            transforms.CenterCrop(178),  
+            transforms.CenterCrop(148),  
             transforms.Resize((224, 224)),  
             transforms.ToTensor(),
         ])
 
         val_transforms = transforms.Compose([
             transforms.RandomHorizontalFlip(),
-            transforms.CenterCrop(178), 
+            transforms.CenterCrop(148), 
             transforms.Resize((224, 224)),  
             transforms.ToTensor(),
         ])
