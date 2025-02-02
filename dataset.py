@@ -65,10 +65,10 @@ class OxfordPets(Dataset):
 
 class VAEDataset(LightningDataModule):
     """
-    PyTorch Lightning data module for VAE.
+    PyTorch Lightning data module 
 
     Args:
-        data_path: root directory of your dataset.
+        data_dir: root directory of your dataset.
         train_batch_size: the batch size to use during training.
         val_batch_size: the batch size to use during validation.
         patch_size: the size of the crop to take from the original images.
@@ -98,29 +98,46 @@ class VAEDataset(LightningDataModule):
         self.pin_memory = pin_memory
 
     def setup(self, stage: Optional[str] = None) -> None:
-        # =========================  Transforms =========================
-        # For training: apply random transformations for data augmentation
-        train_transforms = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(10),  # Random rotation for data augmentation
-            transforms.CenterCrop(148),
-            transforms.Resize((256, 256)),  # Resize to 256x256
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),  # Random color jitter
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # Normalize for VAE
-        ])
+#       =========================  OxfordPets Dataset  =========================
+            
+#         train_transforms = transforms.Compose([transforms.RandomHorizontalFlip(),
+#                                               transforms.CenterCrop(self.patch_size),
+# #                                               transforms.Resize(self.patch_size),
+#                                               transforms.ToTensor(),
+#                                                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
+        
+#         val_transforms = transforms.Compose([transforms.RandomHorizontalFlip(),
+#                                             transforms.CenterCrop(self.patch_size),
+# #                                             transforms.Resize(self.patch_size),
+#                                             transforms.ToTensor(),
+#                                               transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
 
-        # For validation: only resize and normalize (no augmentation)
-        val_transforms = transforms.Compose([
-            transforms.CenterCrop(148),
-            transforms.Resize((256, 256)),  # Resize to 256x256
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # Normalize for VAE
-        ])
-
-        # =========================  CelebA Dataset  =========================
-        self.train_dataset = CelebA(
-            root=self.data_dir,
+#         self.train_dataset = OxfordPets(
+#             self.data_dir,
+#             split='train',
+#             transform=train_transforms,
+#         )
+        
+#         self.val_dataset = OxfordPets(
+#             self.data_dir,
+#             split='val',
+#             transform=val_transforms,
+#         )
+        
+#       =========================  CelebA Dataset  =========================
+    
+        train_transforms = transforms.Compose([transforms.RandomHorizontalFlip(),
+                                              transforms.CenterCrop(148),
+                                              transforms.Resize(self.patch_size),
+                                              transforms.ToTensor(),])
+        
+        val_transforms = transforms.Compose([transforms.RandomHorizontalFlip(),
+                                            transforms.CenterCrop(148),
+                                            transforms.Resize(self.patch_size),
+                                            transforms.ToTensor(),])
+        
+        self.train_dataset = MyCelebA(
+            self.data_dir,
             split='train',
             transform=train_transforms,
             download=False,
@@ -133,6 +150,8 @@ class VAEDataset(LightningDataModule):
             transform=val_transforms,
             download=False,
         )
+#       ===============================================================
+        
     def train_dataloader(self) -> DataLoader:
         return DataLoader(
             self.train_dataset,
@@ -150,7 +169,7 @@ class VAEDataset(LightningDataModule):
             shuffle=False,
             pin_memory=self.pin_memory,
         )
-
+    
     def test_dataloader(self) -> Union[DataLoader, List[DataLoader]]:
         return DataLoader(
             self.val_dataset,
