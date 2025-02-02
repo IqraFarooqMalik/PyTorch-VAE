@@ -53,19 +53,17 @@ class BetaVAE(BaseVAE):
         # Build Decoder
         modules = []
 
-        # First layer: Linear projection from latent space to feature maps
-        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 7 * 7)  # Increased by 8x to ensure sufficient space for upsampling
+        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 7 * 7)  
 
         hidden_dims.reverse()
 
-        # Upsampling layers
         for i in range(len(hidden_dims) - 1):
             modules.append(
                 nn.Sequential(
                     nn.ConvTranspose2d(hidden_dims[i],
                                     hidden_dims[i + 1],
-                                    kernel_size=4,  # Larger kernel for more upsampling
-                                    stride=2,  # Doubling the spatial dimensions
+                                    kernel_size=4,  
+                                    stride=2,  
                                     padding=1, 
                                     output_padding=1),
                     nn.BatchNorm2d(hidden_dims[i + 1]),
@@ -74,17 +72,15 @@ class BetaVAE(BaseVAE):
 
         self.decoder = nn.Sequential(*modules)
 
-        # Final layer to produce the image with 3 channels (RGB)
         self.final_layer = nn.Sequential(
             nn.ConvTranspose2d(hidden_dims[-1], hidden_dims[-1],
                             kernel_size=4, stride=2, padding=1, output_padding=0),
             nn.BatchNorm2d(hidden_dims[-1]),
             nn.LeakyReLU(),
             nn.Conv2d(hidden_dims[-1], 3, kernel_size=3, padding=1),
-            nn.Tanh()  # Ensures output is between [-1, 1]
+            nn.Tanh()  
         )
 
-        # Make sure the output is resized to (224, 224)
         self.resize_layer = nn.Sequential(
             nn.Upsample(size=(224, 224), mode='bilinear', align_corners=True)
         )
@@ -96,14 +92,10 @@ class BetaVAE(BaseVAE):
         :param input: (Tensor) Input tensor to encoder [N x C x H x W]
         :return: (Tensor) List of latent codes
         """
-        result = self.encoder(input)  # After the convolutions
-        # print("After convolutions:", result.shape)  # Print the shape of the result
-        result = self.adaptive_pool(result)  # Apply adaptive pooling to get a 7x7 feature map
-        # print("After pooling:", result.shape)  # Print the shape after pooling
+        result = self.encoder(input) 
+        result = self.adaptive_pool(result)  
         result = torch.flatten(result, start_dim=1) 
 
-        # Split the result into mu and var components
-        # of the latent Gaussian distribution
         mu = self.fc_mu(result)
         log_var = self.fc_var(result)
 
@@ -130,29 +122,11 @@ class BetaVAE(BaseVAE):
         return eps * std + mu
 
     def forward(self, input: Tensor, **kwargs) -> Tensor:
-        # Check the input size before passing through the encoder
-        # print(f"Input size: {input.size()}")
-        
-        # Encoder step
+
         mu, log_var = self.encode(input)
-        
-        # Check the output size of the encoder (mu and log_var)
-        # print(f"mu size: {mu.size()}")
-        print(f"log_var size: {log_var.size()}")
-        
-        # Reparameterization trick to sample z from the latent distribution
         z = self.reparameterize(mu, log_var)
-        
-        # Check the size of z
-        print(f"z size (latent space): {z.size()}")
-        
-        # Decode the latent code z to reconstruct the image
         recons = self.decode(z)
         
-        # Check the size of the reconstructed image
-        print(f"Reconstructed size: {recons.size()}")
-        
-        # Return the output
         return [recons, input, mu, log_var]
 
 
