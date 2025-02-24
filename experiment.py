@@ -124,50 +124,50 @@ class VAEXperiment(pl.LightningModule):
     #     plt.close()
 
 
+# for resized
     def plot_loss_curves(self):
         """Plots and saves training & validation loss curves."""
         
-        # Function to replace NaN and inf values with a large number for plotting
-        def handle_inf_nan(losses):
-            return [np.nan if np.isnan(loss) or np.isinf(loss) else loss for loss in losses]
-        
+        # Define total number of epochs (from 0 to 9)
+        total_epochs = 10  # Assuming 10 epochs
+
         plt.figure(figsize=(10, 6))
 
-        # Training Loss
-        epochs_train = [epoch / (len(self.history["train_loss"]) / 10) for epoch in range(1, len(self.history["train_loss"]) + 1)]
-        train_loss = handle_inf_nan(self.history["train_loss"])
+        # Train Loss
+        epochs_train = np.linspace(0, total_epochs-1, len(self.history["train_loss"]))
         plt.subplot(2, 2, 1)
-        plt.plot(epochs_train, train_loss, label="Training Loss", color="blue")
+        plt.plot(epochs_train, self.history["train_loss"], label="Training Loss", color="blue")
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend()
+        plt.xticks(np.arange(0, total_epochs, 1))  # Set x-ticks to 0,1,2,...,9
 
         # Validation Loss
-        epochs_val = [epoch / (len(self.history["val_loss"]) / 10) for epoch in range(1, len(self.history["val_loss"]) + 1)]
-        val_loss = handle_inf_nan(self.history["val_loss"])
+        epochs_val = np.linspace(0, total_epochs-1, len(self.history["val_loss"]))
         plt.subplot(2, 2, 2)
-        plt.plot(epochs_val, val_loss, label="Validation Loss", color="orange")
+        plt.plot(epochs_val, self.history["val_loss"], label="Validation Loss", color="orange")
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend()
+        plt.xticks(np.arange(0, total_epochs, 1))  # Set x-ticks to 0,1,2,...,9
 
         # Reconstruction Loss
-        epochs_reconstruction = [epoch / (len(self.history["reconstruction_loss"]) / 10) for epoch in range(1, len(self.history["reconstruction_loss"]) + 1)]
-        reconstruction_loss = handle_inf_nan(self.history["reconstruction_loss"])
+        epochs_reconstruction = np.linspace(0, total_epochs-1, len(self.history["reconstruction_loss"]))
         plt.subplot(2, 2, 3)
-        plt.plot(epochs_reconstruction, reconstruction_loss, label="Reconstruction Loss", color="green")
+        plt.plot(epochs_reconstruction, self.history["reconstruction_loss"], label="Reconstruction Loss", color="green")
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend()
+        plt.xticks(np.arange(0, total_epochs, 1))  # Set x-ticks to 0,1,2,...,9
 
         # KL Divergence
-        epochs_kl = [epoch / (len(self.history["kl_divergence"]) / 10) for epoch in range(1, len(self.history["kl_divergence"]) + 1)]
-        kl_divergence = handle_inf_nan(self.history["kl_divergence"])
+        epochs_kl = np.linspace(0, total_epochs-1, len(self.history["kl_divergence"]))
         plt.subplot(2, 2, 4)
-        plt.plot(epochs_kl, kl_divergence, label="KL Divergence", color="red")
+        plt.plot(epochs_kl, self.history["kl_divergence"], label="KL Divergence", color="red")
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend()
+        plt.xticks(np.arange(0, total_epochs, 1))  # Set x-ticks to 0,1,2,...,9
 
         plt.tight_layout()
 
@@ -176,6 +176,7 @@ class VAEXperiment(pl.LightningModule):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         plt.close()
+
 
         
     def on_validation_end(self) -> None:
