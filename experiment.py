@@ -10,52 +10,172 @@ from torchvision import transforms
 import torchvision.utils as vutils
 from torchvision.datasets import CelebA
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class VAEXperiment(pl.LightningModule):
-
-    def __init__(self,
-                 vae_model: BaseVAE,
-                 params: dict) -> None:
+    def __init__(self, vae_model: BaseVAE, params: dict) -> None:
         super(VAEXperiment, self).__init__()
-
         self.model = vae_model
         self.params = params
         self.curr_device = None
-        self.hold_graph = False
-        try:
-            self.hold_graph = self.params['retain_first_backpass']
-        except:
-            pass
+        self.hold_graph = params.get('retain_first_backpass', False)
+        
+        # Store loss history
+        self.history = {
+            "train_loss": [],
+            "val_loss": [],
+            "reconstruction_loss": [],
+            "kl_divergence": []
+        }
 
     def forward(self, input: Tensor, **kwargs) -> Tensor:
         return self.model(input, **kwargs)
-
-    def training_step(self, batch, batch_idx, optimizer_idx = 0):
+    
+    def training_step(self, batch, batch_idx, optimizer_idx=0):
         real_img, labels = batch
         self.curr_device = real_img.device
 
-        results = self.forward(real_img, labels = labels)
-        train_loss = self.model.loss_function(*results,
-                                              M_N = self.params['kld_weight'], #al_img.shape[0]/ self.num_train_imgs,
-                                              optimizer_idx=optimizer_idx,
-                                              batch_idx = batch_idx)
+        results = self.forward(real_img, labels=labels)
+        train_loss = self.model.loss_function(
+            *results,
+            M_N=self.params['kld_weight'],  # KLD weight term
+            optimizer_idx=optimizer_idx,
+            batch_idx=batch_idx
+        )
 
         self.log_dict({key: val.item() for key, val in train_loss.items()}, sync_dist=True)
 
+        # Store loss values
+        self.history["train_loss"].append(train_loss["loss"].item())
+        self.history["reconstruction_loss"].append(train_loss["Reconstruction_Loss"].item())
+        self.history["kl_divergence"].append(train_loss["KLD"].item())
+
         return train_loss['loss']
 
-    def validation_step(self, batch, batch_idx, optimizer_idx = 0):
+    def validation_step(self, batch, batch_idx, optimizer_idx=0):
         real_img, labels = batch
         self.curr_device = real_img.device
 
-        results = self.forward(real_img, labels = labels)
-        val_loss = self.model.loss_function(*results,
-                                            M_N = 1.0, #real_img.shape[0]/ self.num_val_imgs,
-                                            optimizer_idx = optimizer_idx,
-                                            batch_idx = batch_idx)
+        results = self.forward(real_img, labels=labels)
+        val_loss = self.model.loss_function(
+            *results,
+            M_N=1.0,  # Weight for validation
+            optimizer_idx=optimizer_idx,
+            batch_idx=batch_idx
+        )
 
         self.log_dict({f"val_{key}": val.item() for key, val in val_loss.items()}, sync_dist=True)
+
+        # Store validation loss
+        self.history["val_loss"].append(val_loss["loss"].item())
+
+    def on_train_epoch_end(self):
+        """Plot loss graphs after each epoch."""
+        self.plot_loss_curves()
+
+    # def plot_loss_curves(self):
+    #     """Plots and saves training & validation loss curves."""
+        
+    #     plt.figure(figsize=(10, 6))
+
+    #     # Define the scaling factor to match the range of loss and epoch values
+    #     # epoch_scaling_factor = len(self.history["train_loss"]) / 10  # Scale epochs to fit the loss range
+        
+    #     # Training Loss
+    #     epochs_train = [epoch / (len(self.history["train_loss"]) / 10) for epoch in range(1, len(self.history["train_loss"]) + 1)]
+    #     plt.subplot(2, 2, 1)
+    #     plt.plot(epochs_train, self.history["train_loss"], label="Training Loss", color="blue")
+    #     plt.xlabel("Epochs")
+    #     plt.ylabel("Loss")
+    #     plt.legend()
+
+    #     # Validation Loss
+    #     epochs_val = [epoch / (len(self.history["val_loss"]) / 10) for epoch in range(1, len(self.history["val_loss"]) + 1)]
+    #     plt.subplot(2, 2, 2)
+    #     plt.plot(epochs_val, self.history["val_loss"], label="Validation Loss", color="orange")
+    #     plt.xlabel("Epochs")
+    #     plt.ylabel("Loss")
+    #     plt.legend()
+
+    #     # Reconstruction Loss
+    #     epochs_reconstruction = [epoch / (len(self.history["reconstruction_loss"]) / 10) for epoch in range(1, len(self.history["reconstruction_loss"]) + 1)]
+    #     plt.subplot(2, 2, 3)
+    #     plt.plot(epochs_reconstruction, self.history["reconstruction_loss"], label="Reconstruction Loss", color="green")
+    #     plt.xlabel("Epochs")
+    #     plt.ylabel("Loss")
+    #     plt.legend()
+
+    #     # KL Divergence
+    #     epochs_kl = [epoch / (len(self.history["kl_divergence"]) / 10) for epoch in range(1, len(self.history["kl_divergence"]) + 1)]
+    #     plt.subplot(2, 2, 4)
+    #     plt.plot(epochs_kl, self.history["kl_divergence"], label="KL Divergence", color="red")
+    #     plt.xlabel("Epochs")
+    #     plt.ylabel("Loss")
+    #     plt.legend()
+
+    #     plt.tight_layout()
+        
+    #     # Save the figure
+    #     save_path = os.path.join(self.logger.log_dir, f"graphs/loss_curves_Epoch_{self.current_epoch}.png")
+    #     os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    #     plt.savefig(save_path)
+    #     plt.close()
+
+
+    def plot_loss_curves(self):
+        """Plots and saves training & validation loss curves."""
+        
+        # Function to replace NaN and inf values with a large number for plotting
+        def handle_inf_nan(losses):
+            return [np.nan if np.isnan(loss) or np.isinf(loss) else loss for loss in losses]
+        
+        plt.figure(figsize=(10, 6))
+
+        # Training Loss
+        epochs_train = [epoch / (len(self.history["train_loss"]) / 10) for epoch in range(1, len(self.history["train_loss"]) + 1)]
+        train_loss = handle_inf_nan(self.history["train_loss"])
+        plt.subplot(2, 2, 1)
+        plt.plot(epochs_train, train_loss, label="Training Loss", color="blue")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+
+        # Validation Loss
+        epochs_val = [epoch / (len(self.history["val_loss"]) / 10) for epoch in range(1, len(self.history["val_loss"]) + 1)]
+        val_loss = handle_inf_nan(self.history["val_loss"])
+        plt.subplot(2, 2, 2)
+        plt.plot(epochs_val, val_loss, label="Validation Loss", color="orange")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+
+        # Reconstruction Loss
+        epochs_reconstruction = [epoch / (len(self.history["reconstruction_loss"]) / 10) for epoch in range(1, len(self.history["reconstruction_loss"]) + 1)]
+        reconstruction_loss = handle_inf_nan(self.history["reconstruction_loss"])
+        plt.subplot(2, 2, 3)
+        plt.plot(epochs_reconstruction, reconstruction_loss, label="Reconstruction Loss", color="green")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+
+        # KL Divergence
+        epochs_kl = [epoch / (len(self.history["kl_divergence"]) / 10) for epoch in range(1, len(self.history["kl_divergence"]) + 1)]
+        kl_divergence = handle_inf_nan(self.history["kl_divergence"])
+        plt.subplot(2, 2, 4)
+        plt.plot(epochs_kl, kl_divergence, label="KL Divergence", color="red")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+
+        plt.tight_layout()
+
+        # Save the figure
+        save_path = os.path.join(self.logger.log_dir, f"graphs/loss_curves_Epoch_{self.current_epoch}.png")
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path)
+        plt.close()
 
         
     def on_validation_end(self) -> None:
